@@ -1,1 +1,25 @@
 # aws-certification
+
+The AWS certification learning and AI-experimentation project. This repo holds study material, practice questions, progress tracking, and AI-assisted learning experiments for AWS certifications - starting with AWS Certified Cloud Practitioner (CLF-C02).
+
+## Boundaries
+
+- This repo may reference general knowledge from [personal-ai-profile](../personal-ai-profile) (e.g. learning preferences, long-term goals), but does not duplicate that repo's content.
+- Certification-specific study material, notes, and practice questions live here, not in personal-ai-profile.
+- Writing and git conventions (character rules, file naming, commit message format, commit checkpoints) are defined once in `personal-ai-profile/writing_conventions` and `personal-ai-profile/interactions`, and apply here too, unless a specific task requires otherwise. They are not duplicated in this repo.
+
+## Structure
+
+```
+books/           notes and practice questions, one folder per book, each
+                  organized by that book's own chapters
+practice_tests/   quick chapter-scoped quizzes and a results dashboard
+resources/        study resources in use (books, courses, channels)
+progress/         weak areas and knowledge gaps, tracked over time
+```
+
+Material is organized by book (under `books/`) rather than by AWS exam domain directly, since that's how it's actually being consumed. Multiple books - for this certification or a later one - can coexist under `books/` without colliding; how to cross-reference or combine notes across multiple books at once is a problem for when that actually happens, not solved upfront. This structure overall is expected to evolve - folders or the organizing scheme itself may be added, renamed, or restructured as understanding develops. Nothing here is meant to be locked in permanently.
+
+## Status
+
+Initial structure for AWS Certified Cloud Practitioner (CLF-C02), starting with "AWS Certified Cloud Practitioner: Understand AWS Like Never Before with Analogies & Real-World Examples" by Rafi Boghosians (see `books/cloud_practitioner_boghosians/`).
