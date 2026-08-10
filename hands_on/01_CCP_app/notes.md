@@ -1,10 +1,10 @@
 ---
-title: "Hands-On 01: EC2 Web App"
-tags: [hands_on, ec2, vpc, flask]
+title: "Hands-On 01: CCP App"
+tags: [hands_on, ec2, vpc, flask, ccp_app]
 updated: 2026-08-09
 ---
 
-# Hands-On 01: EC2 Web App
+# Hands-On 01: CCP App
 
 A small dynamic Flask app deployed on an EC2 instance inside a custom VPC. Ties back to Chapter 1's `notes.md` (IaaS, EC2) and `deeper_dive_notes.md` (virtualization, VPC/subnets/security groups).
 
