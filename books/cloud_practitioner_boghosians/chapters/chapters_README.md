@@ -8,18 +8,19 @@ updated: 2026-08-09
 
 Notes and practice questions, organized by chapter of the current study book ("AWS Certified Cloud Practitioner: Understand AWS Like Never Before with Analogies & Real-World Examples" by Rafi Boghosians), not by AWS exam domain directly.
 
-Each chapter folder is named `NN_chapter_title/` and contains six files, split by both content type and scope:
+Each chapter folder is named `NN_chapter_title/` and contains these files, split by content type, scope, and role:
 
 - `notes.md` - distilled notes on the book's own core chapter content.
 - `deeper_dive_notes.md` - notes on topics that came from questions asked beyond what the book covers directly, kept as a separate file rather than a section within `notes.md`.
 - `practice_questions.md` - questions testing retention of `notes.md`, with an answer key at the bottom.
 - `deeper_dive_questions.md` - questions testing retention of `deeper_dive_notes.md`, with an answer key at the bottom.
-- `flashcards.md` - term/definition flashcards distilled from `notes.md`. Source of truth for `flashcards.html`.
-- `deeper_dive_flashcards.md` - term/definition flashcards distilled from `deeper_dive_notes.md`. Also feeds into `flashcards.html`.
+- `flashcards.md` - term/definition flashcards distilled from `notes.md`. Human-readable source of truth for this chapter's Core deck.
+- `deeper_dive_flashcards.md` - term/definition flashcards distilled from `deeper_dive_notes.md`. Human-readable source of truth for this chapter's Deeper Dive deck.
 
-Plus one generated file:
+Plus generated files, which should never be hand-edited directly - update the `.md` sources above and regenerate instead:
 
-- `flashcards.html` - a self-contained, offline flashcard viewer for this chapter (open it directly in a browser). Toggles between the Core and Deeper Dive decks. Generated from `flashcards.md` and `deeper_dive_flashcards.md` - if those change, this needs to be regenerated. There's also a whole-book version at `../../../all_flashcards.html`.
+- `flashcards_data.js` - the single JS data file holding this chapter's card data (both decks), generated from `flashcards.md` and `deeper_dive_flashcards.md`. Both `flashcards.html` (this chapter) and `../../../all_flashcards.html` (whole book) load this same file via `<script src="...">`, so card content is never duplicated across HTML files - only this one data file needs to change.
+- `flashcards.html` - a self-contained, offline flashcard viewer for this chapter (open it directly in a browser). Toggles between the Core and Deeper Dive decks. Contains no card data of its own - it just renders whatever `flashcards_data.js` provides.
 
 This structure is expected to change as studying progresses - chapters may get merged, split, or reorganized. See `writing_conventions/overall.md` in personal-ai-profile for the "prefer flexible structure" principle this follows.
 
