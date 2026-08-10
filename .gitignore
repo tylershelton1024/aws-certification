@@ -11,3 +11,6 @@ desktop.ini
 # Local scratch / drafts not meant for the repo
 *.tmp
 /scratch/
+
+# AWS SSH key pairs - never commit these
+*.pem
