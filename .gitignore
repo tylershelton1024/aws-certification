@@ -12,5 +12,9 @@ desktop.ini
 *.tmp
 /scratch/
 
+# Python
+__pycache__/
+*.pyc
+
 # AWS SSH key pairs - never commit these
 *.pem

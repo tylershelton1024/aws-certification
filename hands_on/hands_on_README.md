@@ -15,4 +15,4 @@ Each entry is a folder named `NN_short_name/`, numbered in the order it was buil
 ## Entries
 
 - `00_account_setup/` - AWS account creation, root MFA, IAM user, and billing alarm setup. Ties to Chapter 3 (AWS Accounts and Billing).
-- `01_CCP_app/` - a small dynamic Flask app deployed on an EC2 instance inside a custom VPC. Ties to Chapter 1 (AWS Cloud Fundamentals) - IaaS, virtualization, and the VPC/security-group Deeper Dive material.
+- `01_CCP_app/` - a small dynamic Flask app deployed on an EC2 instance inside a custom VPC, growing into a real study tool: `/flashcards` and `/notes` routes discover and serve content from every topic across `resources/books/` and `resources/youtube_channels/` automatically. Ties to Chapter 1 (AWS Cloud Fundamentals) - IaaS, virtualization, and the VPC/security-group Deeper Dive material.
