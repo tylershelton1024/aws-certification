@@ -52,6 +52,36 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
    - C) PaaS applications cannot store any data
    - D) IaaS applications cannot be moved between cloud providers either
 
+8. Which AWS resource is the door between a VPC and the public internet, and requires a route table rule pointing at it to actually be used?
+   - A) NAT Gateway
+   - B) Internet Gateway
+   - C) Security Group
+   - D) Network ACL
+
+9. Which AWS resource gives a private subnet outbound-only internet access, and unlike its similarly-named counterpart, has an hourly charge plus per-GB fees?
+   - A) Internet Gateway
+   - B) NAT Gateway
+   - C) Route Table
+   - D) VPC
+
+10. Why doesn't a security group need a separate outbound rule to let a response back out, after the matching inbound request was allowed in?
+    - A) Outbound traffic is never checked by security groups
+    - B) Security groups are stateful - the response is automatically allowed back out
+    - C) The internet gateway handles all outbound rules instead
+    - D) Network ACLs override security group behavior
+
+11. What does a "Permission denied" error when connecting via SSH actually indicate?
+    - A) The network connection failed entirely
+    - B) The instance isn't running
+    - C) The network connection succeeded, but the key was rejected
+    - D) The security group is blocking all traffic
+
+12. A web app became unreachable even after the correct HTTP security group rule was added and confirmed. What was the actual remaining cause?
+    - A) HTTP was disabled at the OS level
+    - B) The browser auto-upgraded to HTTPS, which uses a different port (443) that wasn't open
+    - C) The route table needed to be recreated
+    - D) The VPC's CIDR block was too small
+
 ## Answer Key
 
 1. B - The hypervisor divides physical hardware into isolated virtual machines.
@@ -61,3 +91,8 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
 5. B - Network ACLs are firewalls scoped to an entire subnet.
 6. C - IaaS gives the OS-level control legacy software typically needs.
 7. B - Migration difficulty comes from structural dependency on the platform's deployment model and managed behaviors, not just a feature limitation.
+8. B - The internet gateway is the door in/out of a VPC; the route table is what makes it actually usable.
+9. B - NAT gateways are for private-subnet outbound access and are billed hourly plus per-GB, unlike internet gateways.
+10. B - Security groups are stateful, so allowed inbound traffic gets its response allowed back out automatically.
+11. C - "Permission denied" means the connection worked; the key itself was rejected.
+12. B - HTTP and HTTPS use different default ports (80 vs. 443) - opening one doesn't open the other.

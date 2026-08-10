@@ -48,9 +48,13 @@ A firewall applied to an individual EC2 instance.
 
 A firewall applied at the subnet level, checking traffic before it reaches individual instances.
 
-## Internet/NAT Gateway
+## Internet Gateway
 
-Controls whether and how private resources can reach the internet.
+The door between a VPC and the public internet. One per VPC. Needs a route table rule pointing at it to actually be used. No hourly charge.
+
+## NAT Gateway
+
+A separate resource from an internet gateway, used by private subnets that need outbound-only internet access without being directly reachable. Has an hourly charge plus per-GB fees.
 
 ## CIDR
 
@@ -67,3 +71,23 @@ The number after the slash in a CIDR block (e.g. the "16" in `/16`). It's how ma
 ## Private IP Ranges
 
 `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16` - reserved address ranges for internal/private networks, never used directly on the public internet.
+
+## Stateful (Security Groups)
+
+If a request is allowed in by a security group, the matching response is automatically allowed back out - no separate outbound rule needed. Different from Network ACLs, which are stateless.
+
+## Public vs. Private IP
+
+The private IP is what a device uses inside its own network (e.g. `192.168.1.5` at home, or an EC2 instance's internal IP). The public IP is the address visible to the outside internet - a router or internet gateway translates between the two.
+
+## HTTPS
+
+HTTP wrapped in encryption (TLS/SSL) - same messages, unreadable in transit. Uses a different default port (443) than HTTP (80), which matters operationally: opening one port does not open the other.
+
+## SSH Key Pair
+
+A public/private key pair used to log into a server instead of a password. AWS keeps the public half; you download and keep the private half (a `.pem` file). Whoever holds that file can log in - never commit it to a repo.
+
+## "Permission Denied" (SSH)
+
+Means the network connection itself worked (security groups/routing are fine) - the key specifically was rejected. Narrows the problem to the key file, its permissions, or the username.
