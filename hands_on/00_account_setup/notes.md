@@ -10,10 +10,13 @@ What was done to get a real AWS account ready for hands-on work, and why. Writte
 
 ## What was set up
 
-- Created a new AWS account (root user).
-- Enabled MFA on the root account immediately, before doing anything else. Root is not used for day-to-day work from here on.
-- Created an IAM user for daily use, with its own MFA.
-- Set up a Zero Spend Budget (alerts on any spend above $0) plus AWS Free Tier usage alerts, so unexpected charges get caught quickly.
+- [x] Created a new AWS account (root user).
+- [x] Enabled MFA on the root account. Root is no longer used for day-to-day work.
+- [x] Created an IAM user for daily use, with its own MFA.
+- [x] Set up a Zero Spend Budget (alerts on any spend above $0), so unexpected charges get caught quickly.
+- [x] Confirmed AWS Free Tier usage alerts are also enabled.
+
+This checklist reflects actual status, updated as steps are completed - not written as if everything were done in advance.
 
 ## Why this came first
 
