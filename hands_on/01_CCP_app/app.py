@@ -1,11 +1,49 @@
 from flask import Flask
 import urllib.request
 import datetime
+import os
+import re
+import json
+import glob
+import markdown
 
 app = Flask(__name__)
 visit_count = 0
 
 METADATA_BASE = "http://169.254.169.254/latest"
+
+# This file lives at hands_on/01_CCP_app/app.py - go up 3 levels to reach
+# the repo root, then into resources/.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+RESOURCES_DIR = os.path.join(REPO_ROOT, "resources")
+
+
+def list_topic_folders():
+    """Returns sorted (folder_name, folder_path) pairs for every topic directory,
+    across every book under resources/books/ and every channel under
+    resources/youtube_channels/. Both share the same <source>/topics/<topic>/
+    shape, so one pattern covers both - a new book or channel needs no code
+    change here, only a new folder on disk."""
+    pattern_books = os.path.join(RESOURCES_DIR, "books", "*", "topics", "*") + os.sep
+    pattern_channels = os.path.join(RESOURCES_DIR, "youtube_channels", "*", "topics", "*") + os.sep
+    paths = sorted(glob.glob(pattern_books)) + sorted(glob.glob(pattern_channels))
+    folders = []
+    for path in paths:
+        folder_name = os.path.basename(os.path.normpath(path))
+        folders.append((folder_name, path))
+    return folders
+
+
+def get_topic_label(folder_path):
+    """Reads the topic's notes.md frontmatter title, falling back to the folder name."""
+    notes_path = os.path.join(folder_path, "notes.md")
+    if os.path.exists(notes_path):
+        with open(notes_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        match = re.search(r'^title:\s*"?([^"\n]+?)"?\s*$', content, re.MULTILINE)
+        if match:
+            return match.group(1).replace(" - Notes", "")
+    return os.path.basename(os.path.normpath(folder_path))
 
 
 def get_instance_metadata():

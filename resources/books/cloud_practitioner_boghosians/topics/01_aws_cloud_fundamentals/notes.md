@@ -72,4 +72,4 @@ Businesses mix and match these models depending on the project and how much cont
 
 See `deeper_dive_notes.md` for topics that came from questions asked beyond what this chapter covers directly.
 
-See `../../../../hands_on/00_account_setup/` and `../../../../hands_on/01_CCP_app/` for real, deployed AWS work tied to this chapter.
+See `../../../../../hands_on/00_account_setup/` and `../../../../../hands_on/01_CCP_app/` for real, deployed AWS work tied to this chapter.

@@ -11,7 +11,7 @@ Study material organized per book, so multiple books - for the same certificatio
 Each book gets its own folder: `<book_slug>/`, containing:
 
 - `<book_slug>_README.md` - what the book is, its style, and its role (primary source vs. supplemental).
-- `chapters/` - notes and practice questions per chapter, following that book's own table of contents.
+- `topics/` - notes and practice questions per chapter, following that book's own table of contents. Named `topics/` (not `chapters/`) to stay structurally consistent with `../youtube_channels/`, which has topics but no chapters - each topic's own title still says "Chapter N" where that applies.
 
 If/when multiple books are in play at once (e.g. an analogy-focused book alongside a more technical reference book), we'll figure out how to cross-reference or combine their notes at that point - this structure doesn't try to solve that yet, it just keeps books from colliding.
 

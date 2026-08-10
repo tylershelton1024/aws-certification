@@ -6,7 +6,7 @@ updated: 2026-08-09
 
 # Chapter 1: AWS Cloud Fundamentals - Deeper Dive Flashcards
 
-Source: written by the assistant from deeper_dive_notes.md. Source of truth for the cards - `flashcards.html` (this chapter) and `../../all_flashcards.html` (whole book) are generated from files like this one and need to be regenerated if cards here change.
+Source: written by the assistant from deeper_dive_notes.md. Source of truth for the cards - `flashcards.html` (this chapter) and `../../../../../all_flashcards.html` (whole book) are generated from files like this one and need to be regenerated if cards here change.
 
 ## Hypervisor
 
