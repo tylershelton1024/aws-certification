@@ -50,3 +50,27 @@ Software that sits between the OS and your application - the "waiter" that carri
 - **Security groups** - a firewall on an individual instance.
 - **Network ACLs** - a firewall at the subnet level.
 - **Internet/NAT gateway** - controls whether and how your private resources can reach the internet.
+
+## CIDR Notation
+
+CIDR (Classless Inter-Domain Routing) is a compact way to write a whole range of IP addresses, instead of listing each one individually. A block like `10.0.0.0/16` describes both a starting address and how many addresses are in that range.
+
+**The bit math:**
+- An IPv4 address is 32 bits, written as 4 octets of 8 bits each (e.g. `10.0.0.0`).
+- The number after the slash is how many of those 32 bits are locked as the fixed network prefix - the rest are free to vary, and each combination of the free bits is one address in the block.
+- Fewer locked bits means more room to vary - so counterintuitively, a *smaller* number after the slash means a *bigger* block, not a smaller one.
+
+**Sizing shortcut (works cleanly for /8, /16, /24, /32 - numbers that are multiples of 8):**
+- Divide the CIDR number by 8 to get how many whole octets are locked.
+- Subtract from 4 total octets to get the free octets.
+- Each free octet is a factor of 256, so total addresses = 256^(free octets).
+- `/24` -> 3 locked, 1 free -> 256 addresses.
+- `/16` -> 2 locked, 2 free -> 256 x 256 = 65,536 addresses.
+- `/8` -> 1 locked, 3 free -> 256 x 256 x 256 = 16,777,216 addresses.
+- This shortcut only works because those numbers land exactly on octet boundaries. Other common subnet sizes (like /20 or /27) split an octet in half and need actual bit math instead - not covered here.
+
+**Where 256 comes from:** an octet is 8 bits, and each bit is either 0 or 1 (2 states). Every additional bit doubles the possible combinations, so 8 bits = 2^8 = 256 combinations, read as decimal 0-255.
+
+**It's binary underneath:** `10.0.0.0` is really `00001010.00000000.00000000.00000000` - the decimal, dotted format is just a human-friendly translation of the actual 32-bit binary number. Dots are inserted every 8 bits purely for readability.
+
+**Private IP ranges:** `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16` are reserved specifically for internal/private networks and are never used directly on the public internet - which is why VPCs conventionally use them. The VPC built for this chapter's hands-on project uses `10.0.0.0/16`, a small slice of the much larger `10.0.0.0/8` reserved space.

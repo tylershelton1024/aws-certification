@@ -51,3 +51,19 @@ A firewall applied at the subnet level, checking traffic before it reaches indiv
 ## Internet/NAT Gateway
 
 Controls whether and how private resources can reach the internet.
+
+## CIDR
+
+Classless Inter-Domain Routing - a compact way to write a range of IP addresses (e.g. `10.0.0.0/16`) instead of listing each one. Used for VPC/subnet sizing.
+
+## Octet
+
+One group of 8 bits in an IP address (e.g. the "10" in `10.0.0.0`). Each octet holds 256 possible values (0-255), since 2^8 = 256.
+
+## CIDR Prefix Length
+
+The number after the slash in a CIDR block (e.g. the "16" in `/16`). It's how many of the 32 bits are locked as the network prefix - fewer locked bits means more addresses, so a smaller number means a bigger block.
+
+## Private IP Ranges
+
+`10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16` - reserved address ranges for internal/private networks, never used directly on the public internet.
