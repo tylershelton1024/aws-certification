@@ -6,12 +6,20 @@ updated: 2026-08-09
 
 # Chapters
 
-Notes and practice questions, organized by chapter of the current study book ("AWS Certified Cloud Practitioner: Understand AWS Like Never Before with Analogies & Real-World Examples" by Rafi Boghosian), not by AWS exam domain directly.
+Notes and practice questions, organized by chapter of the current study book ("AWS Certified Cloud Practitioner: Understand AWS Like Never Before with Analogies & Real-World Examples" by Rafi Boghosians), not by AWS exam domain directly.
 
-Each chapter folder is named `NN_chapter_title/` and contains:
+Each chapter folder is named `NN_chapter_title/` and contains six files, split by both content type and scope:
 
-- `notes.md` - distilled notes built up as the chapter is read and discussed.
-- `practice_questions.md` - questions generated from those same notes, to test retention.
+- `notes.md` - distilled notes on the book's own core chapter content.
+- `deeper_dive_notes.md` - notes on topics that came from questions asked beyond what the book covers directly, kept as a separate file rather than a section within `notes.md`.
+- `practice_questions.md` - questions testing retention of `notes.md`, with an answer key at the bottom.
+- `deeper_dive_questions.md` - questions testing retention of `deeper_dive_notes.md`, with an answer key at the bottom.
+- `flashcards.md` - term/definition flashcards distilled from `notes.md`. Source of truth for `flashcards.html`.
+- `deeper_dive_flashcards.md` - term/definition flashcards distilled from `deeper_dive_notes.md`. Also feeds into `flashcards.html`.
+
+Plus one generated file:
+
+- `flashcards.html` - a self-contained, offline flashcard viewer for this chapter (open it directly in a browser). Toggles between the Core and Deeper Dive decks. Generated from `flashcards.md` and `deeper_dive_flashcards.md` - if those change, this needs to be regenerated. There's also a whole-book version at `../../../all_flashcards.html`.
 
 This structure is expected to change as studying progresses - chapters may get merged, split, or reorganized. See `writing_conventions/overall.md` in personal-ai-profile for the "prefer flexible structure" principle this follows.
 
