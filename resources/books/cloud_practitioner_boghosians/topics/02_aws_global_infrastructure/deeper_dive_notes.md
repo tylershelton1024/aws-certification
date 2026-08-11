@@ -42,3 +42,11 @@ Whether a specific application fails over to another AZ during an outage depends
 This is squarely part of the Shared Responsibility Model: AWS secures and maintains the underlying infrastructure (the AZs exist and are reliable), but architecting an application to actually use that redundancy is the customer's job - "reliability in the cloud," the same bucket as permissions and patching.
 
 **Real example from this project:** `CCP_app`'s EC2 instance runs in a single, specific Availability Zone. If that exact AZ went down, the app would go offline - it has no load balancer, no second instance in another AZ, and no auto-scaling group. Recovering it would currently require the same terminate-and-relaunch process used earlier tonight, just triggered by an AZ outage instead of a code update. Building real automatic failover would mean deliberately deploying across multiple AZs - not something this project has done, or currently needs, for a small learning app.
+
+## Auto Scaling (What Actually Handles Traffic Spikes)
+
+Availability Zones provide redundancy and fault isolation - not built-in capacity elasticity. An AZ does not sit there holding a giant pile of idle spare capacity "just in case" traffic spikes.
+
+What actually handles a sudden traffic spike (e.g. a flash sale) is a separate AWS service called **Auto Scaling** (via an Auto Scaling Group): it automatically launches new compute instances when demand increases, and terminates them again when demand drops, rather than relying on pre-provisioned idle capacity. It's commonly paired with a load balancer that distributes traffic across whatever instances currently exist, which can span multiple AZs at once.
+
+Note on scope: Auto Scaling is more properly Compute Services material (a later chapter), not core Global Infrastructure content - it's filed here because it came up naturally while reinforcing this chapter's traffic-spike question, not because it belongs to Chapter 2's own subject matter.

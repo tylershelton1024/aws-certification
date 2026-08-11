@@ -27,3 +27,7 @@ Fault tolerance is the mechanism - a redundant backup ready to take over with ze
 ## Multi-AZ Redundancy (Customer Responsibility)
 
 AWS's Availability Zones being redundant does not automatically make your application redundant. An application only fails over to another AZ if the customer deliberately architected it to run across multiple AZs (e.g. a load balancer plus instances in multiple AZs, or a Multi-AZ database). This is part of the customer's side of the Shared Responsibility Model, not something AWS does for you automatically.
+
+## Auto Scaling
+
+The AWS service that automatically launches new compute instances when demand increases and terminates them again when demand drops, instead of relying on an Availability Zone holding pre-provisioned idle capacity. Often paired with a load balancer distributing traffic across the resulting instances, potentially across multiple AZs. AZs provide redundancy and fault isolation - Auto Scaling is what actually provides capacity elasticity for traffic spikes.

@@ -40,6 +40,12 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
    - C) High availability requires no redundancy at all
    - D) Fault tolerance only applies to databases, high availability only applies to compute
 
+6. What actually allows a system to handle a sudden 10x traffic spike, like a flash sale?
+   - A) Availability Zones automatically provide extra idle capacity for this purpose
+   - B) Auto Scaling dynamically launches new compute instances in response to demand, rather than relying on pre-provisioned idle capacity
+   - C) CloudFront runs additional compute to absorb the extra load
+   - D) Regions automatically merge their capacity during high-traffic events
+
 ## Answer Key
 
 1. B - AWS's Availability Zones being redundant doesn't automatically make a specific application redundant - that requires the customer to architect their app to run across multiple AZs (e.g. a load balancer plus instances in more than one AZ). A single-AZ deployment has no automatic failover.
@@ -47,3 +53,4 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
 3. B - CloudFront checks for and serves cached content from nearby edge locations; it does not run application code, unlike a compute service.
 4. B - Region/AZ (infrastructure backbone) and Edge Locations (caching layer, run by CloudFront) are two separate systems that connect to each other, not one nested inside the other.
 5. B - Fault tolerance is the mechanism (redundancy, zero noticeable impact); high availability is the outcome that mechanism helps produce - they aren't two independent, parallel properties.
+6. B - Availability Zones provide redundancy and fault isolation, not elastic capacity. Auto Scaling is the service that actually adds compute capacity on demand.
