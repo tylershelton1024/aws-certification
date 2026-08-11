@@ -1,7 +1,7 @@
 ---
 title: "Chapter 1: AWS Cloud Fundamentals - Deeper Dive Flashcards"
 tags: [chapter_01, cloud_fundamentals, deeper_dive, flashcards]
-updated: 2026-08-09
+updated: 2026-08-10
 ---
 
 # Chapter 1: AWS Cloud Fundamentals - Deeper Dive Flashcards
@@ -75,6 +75,10 @@ The number after the slash in a CIDR block (e.g. the "16" in `/16`). It's how ma
 ## Stateful (Security Groups)
 
 If a request is allowed in by a security group, the matching response is automatically allowed back out - no separate outbound rule needed. Different from Network ACLs, which are stateless.
+
+## Stateless (Network ACLs)
+
+A stateless firewall does not remember past traffic, so it cannot tell that a piece of outbound traffic is "the response to" an inbound request it already allowed. It needs a separate, explicit rule for each direction. Different from Security Groups, which are stateful.
 
 ## Public vs. Private IP
 

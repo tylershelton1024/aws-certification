@@ -1,7 +1,7 @@
 ---
 title: "Chapter 1: AWS Cloud Fundamentals - Deeper Dive Questions"
 tags: [chapter_01, cloud_fundamentals, deeper_dive, practice_questions]
-updated: 2026-08-09
+updated: 2026-08-10
 ---
 
 # Chapter 1: AWS Cloud Fundamentals - Deeper Dive Questions
@@ -82,6 +82,12 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
     - C) The route table needed to be recreated
     - D) The VPC's CIDR block was too small
 
+13. Why does a Network ACL need a separate, explicit rule for both inbound and outbound traffic, when a security group does not?
+    - A) Network ACLs only support inbound rules, so outbound must be handled elsewhere
+    - B) Network ACLs are stateless - they don't remember that outbound traffic is the response to an already-allowed inbound request
+    - C) Security groups are actually slower, so they need the shortcut of statefulness
+    - D) Network ACLs only apply to private subnets
+
 ## Answer Key
 
 1. B - The hypervisor divides physical hardware into isolated virtual machines.
@@ -96,3 +102,4 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
 10. B - Security groups are stateful, so allowed inbound traffic gets its response allowed back out automatically.
 11. C - "Permission denied" means the connection worked; the key itself was rejected.
 12. B - HTTP and HTTPS use different default ports (80 vs. 443) - opening one doesn't open the other.
+13. B - Network ACLs are stateless, so they can't infer that outbound traffic is a response to an already-allowed inbound request - each direction needs its own explicit rule.
