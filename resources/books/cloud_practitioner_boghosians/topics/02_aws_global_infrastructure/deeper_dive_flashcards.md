@@ -31,3 +31,15 @@ AWS's Availability Zones being redundant does not automatically make your applic
 ## Auto Scaling
 
 The AWS service that automatically launches new compute instances when demand increases and terminates them again when demand drops, instead of relying on an Availability Zone holding pre-provisioned idle capacity. Often paired with a load balancer distributing traffic across the resulting instances, potentially across multiple AZs. AZs provide redundancy and fault isolation - Auto Scaling is what actually provides capacity elasticity for traffic spikes.
+
+## Elastic Load Balancing (ELB)
+
+The missing piece that makes multi-AZ redundancy real: an ELB sits in front of an application, spans multiple AZs, and distributes incoming traffic across whichever instances are currently healthy. It continuously checks instance health - if one instance or an entire AZ goes down, it stops routing traffic there automatically. Instances in multiple AZs without a load balancer means no automatic redirection; a load balancer without instances in more than one AZ means nothing to fail over to. Both pieces are required together.
+
+## Multi-Region vs. Multi-AZ Redundancy
+
+Multi-AZ redundancy protects against a single Availability Zone going down, but every AZ used is still inside one Region - it does not protect against a problem affecting the whole Region. Protecting against a full Region outage requires deploying into a second Region as well, a bigger step up in complexity and cost than multi-AZ, and a separate decision from it.
+
+## Cache Refresh (TTL vs. Invalidation)
+
+Cached content at an edge location doesn't stay forever. It refreshes either automatically once its TTL (Time To Live) expires, or immediately via an invalidation - an explicit request to drop a specific cached path everywhere right away, useful when you can't wait for the TTL to naturally expire.

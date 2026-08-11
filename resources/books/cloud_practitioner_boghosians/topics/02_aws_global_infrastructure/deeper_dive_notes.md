@@ -50,3 +50,28 @@ Availability Zones provide redundancy and fault isolation - not built-in capacit
 What actually handles a sudden traffic spike (e.g. a flash sale) is a separate AWS service called **Auto Scaling** (via an Auto Scaling Group): it automatically launches new compute instances when demand increases, and terminates them again when demand drops, rather than relying on pre-provisioned idle capacity. It's commonly paired with a load balancer that distributes traffic across whatever instances currently exist, which can span multiple AZs at once.
 
 Note on scope: Auto Scaling is more properly Compute Services material (a later chapter), not core Global Infrastructure content - it's filed here because it came up naturally while reinforcing this chapter's traffic-spike question, not because it belongs to Chapter 2's own subject matter.
+
+## Elastic Load Balancing (The Missing Piece for Multi-AZ Redundancy)
+
+Deploying instances in multiple Availability Zones isn't enough by itself - something has to actually distribute incoming traffic across those instances, and detect when one goes unhealthy so it stops sending traffic there. That's the job of an **Elastic Load Balancer (ELB)**.
+
+- Sits in front of the application, spanning multiple AZs.
+- Distributes incoming traffic across whichever instances are currently healthy.
+- Continuously checks instance health - if one instance (or an entire AZ) goes down, the load balancer simply stops routing traffic there and sends everything to the remaining healthy instances instead.
+- This is the actual mechanism that makes "multi-AZ redundancy" real for an application - instances in multiple AZs *plus* a load balancer routing across them, together. Neither piece alone is sufficient: instances without a load balancer means no automatic traffic redirection when one fails; a load balancer without instances in more than one AZ means there's nothing to fail over to.
+- Often paired with Auto Scaling: as Auto Scaling adds or removes instances based on demand, the load balancer automatically starts or stops routing traffic to them as they come online or get terminated.
+
+Note on scope: same as Auto Scaling above - Elastic Load Balancing is more properly Compute/Networking Services material from a later chapter, filed here because it directly completes the multi-AZ redundancy picture this chapter's reinforcement conversation was building toward.
+
+## Multi-AZ Redundancy Does Not Protect Against a Region-Wide Outage
+
+Multi-AZ redundancy (multiple AZs plus a load balancer) protects against a single Availability Zone going down. It does not protect against a problem affecting an entire Region, because every AZ used is still inside that one Region - and regions are fully isolated from each other, which cuts both ways: nothing bad in one region spreads to another, but redundancy built inside one region doesn't cross that boundary either.
+
+Protecting against a full Region outage requires deploying into a **second Region** as well - multi-region architecture, not just multi-AZ. This is a materially bigger step up in complexity and cost than multi-AZ, and is a separate decision from it.
+
+## Cache Refresh: TTL Expiration vs. Invalidation
+
+Cached content at an edge location does not stay there forever. Two ways stale cached content gets refreshed:
+
+- **TTL (Time To Live) expiration** - each cached object has a TTL. Once it expires, the next request for that object causes a fresh fetch from the origin automatically, with no action needed from anyone.
+- **Invalidation** - an explicit CloudFront feature that lets you manually force a specific cached path to be dropped everywhere immediately, rather than waiting for the TTL to expire naturally. Useful when you can't wait - e.g. a broken image was just fixed and shouldn't keep serving the old cached version for the rest of its TTL.
