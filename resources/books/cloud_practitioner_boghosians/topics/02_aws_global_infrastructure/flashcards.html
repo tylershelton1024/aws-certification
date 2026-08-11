@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chapter 2: AWS Global Infrastructure - Flashcards</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card-bg: #ffffff;
+    --card-back-bg: #eef2ff;
+    --text: #1f2430;
+    --muted: #6b7280;
+    --accent: #3b5bdb;
+    --accent-text: #ffffff;
+    --border: #d7dae0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+  h1 {
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .tab {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+  .card {
+    width: min(560px, 90vw);
+    min-height: 220px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    user-select: none;
+  }
+  .card.flipped {
+    background: var(--card-back-bg);
+  }
+  .card-label {
+    position: absolute;
+    margin-top: -190px;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .card-text {
+    font-size: 1.15rem;
+    line-height: 1.5;
+  }
+  .hint {
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+  }
+  button.nav {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  button.nav:hover {
+    border-color: var(--accent);
+  }
+  .counter {
+    font-size: 0.9rem;
+    color: var(--muted);
+    min-width: 70px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Chapter 2: AWS Global Infrastructure</h1>
+<div class="subtitle">Click a card to flip it. Card data lives in flashcards_data.js (generated from flashcards.md / deeper_dive_flashcards.md).</div>
+
+<div class="tabs">
+  <button class="tab active" data-deck="core">Core Concepts</button>
+  <button class="tab" data-deck="deeper">Deeper Dive</button>
+</div>
+
+<div class="card-label" id="cardLabel">TERM</div>
+<div class="card" id="card">
+  <div class="card-text" id="cardText"></div>
+</div>
+<div class="hint">Click the card to flip</div>
+
+<div class="controls">
+  <button class="nav" id="prevBtn">&larr; Previous</button>
+  <div class="counter" id="counter"></div>
+  <button class="nav" id="nextBtn">Next &rarr;</button>
+</div>
+
+<script src="flashcards_data.js"></script>
+<script>
+const decks = chapter02Decks;
+
+let currentDeck = "core";
+let index = 0;
+let flipped = false;
+
+const cardEl = document.getElementById("card");
+const cardTextEl = document.getElementById("cardText");
+const cardLabelEl = document.getElementById("cardLabel");
+const counterEl = document.getElementById("counter");
+const tabs = document.querySelectorAll(".tab");
+
+function render() {
+  const deck = decks[currentDeck];
+  if (!deck || deck.length === 0) {
+    cardTextEl.textContent = "No cards yet";
+    cardLabelEl.textContent = "";
+    counterEl.textContent = "";
+    return;
+  }
+  const item = deck[index];
+  cardTextEl.textContent = flipped ? item.definition : item.term;
+  cardLabelEl.textContent = flipped ? "DEFINITION" : "TERM";
+  cardEl.classList.toggle("flipped", flipped);
+  counterEl.textContent = (index + 1) + " / " + deck.length;
+}
+
+cardEl.addEventListener("click", () => {
+  flipped = !flipped;
+  render();
+});
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const deck = decks[currentDeck];
+  if (!deck || deck.length === 0) { return; }
+  index = (index + 1) % deck.length;
+  flipped = false;
+  render();
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  const deck = decks[currentDeck];
+  if (!deck || deck.length === 0) { return; }
+  index = (index - 1 + deck.length) % deck.length;
+  flipped = false;
+  render();
+});
+
+tabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    tabs.forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentDeck = tab.dataset.deck;
+    index = 0;
+    flipped = false;
+    render();
+  });
+});
+
+render();
+</script>
+
+</body>
+</html>
