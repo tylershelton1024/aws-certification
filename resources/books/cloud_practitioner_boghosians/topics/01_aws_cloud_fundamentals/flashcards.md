@@ -1,7 +1,7 @@
 ---
 title: "Chapter 1: AWS Cloud Fundamentals - Flashcards"
 tags: [chapter_01, cloud_fundamentals, flashcards]
-updated: 2026-08-09
+updated: 2026-08-10
 ---
 
 # Chapter 1: AWS Cloud Fundamentals - Flashcards
@@ -35,3 +35,23 @@ Elastic Compute Cloud - virtual servers ("instances") you configure from the gro
 ## AWS Elastic Beanstalk
 
 AWS's PaaS offering. You hand over your code; AWS handles provisioning, scaling, and load balancing underneath it.
+
+## Flexibility (Key Benefit)
+
+AWS scales to demand, and servers stay available no matter the load.
+
+## Speed (Key Benefit)
+
+Instant access to compute and data - developers can focus on their actual jobs instead of waiting on infrastructure to be provisioned.
+
+## Security (Key Benefit)
+
+Built into AWS's foundation, including encryption, identity management, and compliance tools - though the Shared Responsibility Model still applies: AWS secures the underlying infrastructure, you secure what you put in it.
+
+## Reliability (Key Benefit)
+
+Improved speed and reliability across AWS's regions.
+
+## Business Impact (Key Benefit)
+
+Growth, better user satisfaction, and faster innovation, since teams don't have to build everything themselves.

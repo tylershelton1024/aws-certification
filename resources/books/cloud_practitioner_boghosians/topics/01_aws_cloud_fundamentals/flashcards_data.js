@@ -14,7 +14,12 @@ const chapter01Decks = {
     { "term": "PaaS (Platform as a Service)", "definition": "AWS manages the OS, runtime, and middleware; you just provide your application code (e.g. AWS Elastic Beanstalk)." },
     { "term": "SaaS (Software as a Service)", "definition": "The vendor manages everything, including the application itself; you just use it (e.g. Netflix, Gmail, Dropbox)." },
     { "term": "Amazon EC2", "definition": "Elastic Compute Cloud - virtual servers (\"instances\") you configure from the ground up. The classic IaaS example." },
-    { "term": "AWS Elastic Beanstalk", "definition": "AWS's PaaS offering. You hand over your code; AWS handles provisioning, scaling, and load balancing underneath it." }
+    { "term": "AWS Elastic Beanstalk", "definition": "AWS's PaaS offering. You hand over your code; AWS handles provisioning, scaling, and load balancing underneath it." },
+    { "term": "Flexibility (Key Benefit)", "definition": "AWS scales to demand, and servers stay available no matter the load." },
+    { "term": "Speed (Key Benefit)", "definition": "Instant access to compute and data - developers can focus on their actual jobs instead of waiting on infrastructure to be provisioned." },
+    { "term": "Security (Key Benefit)", "definition": "Built into AWS's foundation, including encryption, identity management, and compliance tools - though the Shared Responsibility Model still applies: AWS secures the underlying infrastructure, you secure what you put in it." },
+    { "term": "Reliability (Key Benefit)", "definition": "Improved speed and reliability across AWS's regions." },
+    { "term": "Business Impact (Key Benefit)", "definition": "Growth, better user satisfaction, and faster innovation, since teams don't have to build everything themselves." }
   ],
   "deeper": [
     { "term": "Hypervisor", "definition": "The software layer that divides a single physical server into multiple, isolated virtual machines." },

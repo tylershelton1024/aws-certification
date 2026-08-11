@@ -39,3 +39,19 @@ Redundancy - a backup is already in place before something breaks, so a failure 
 ## High Availability
 
 The property of a system continuing to run even when part of it goes down - enabled by spreading infrastructure across multiple Availability Zones connected by private networks, so traffic can fail over almost instantly.
+
+## Data Compliance
+
+Some data has to stay within specific geographic areas. Picking the right AWS Region helps meet that requirement.
+
+## Fast Failover
+
+The ability to shift workloads to a healthy Availability Zone almost immediately when one AZ has a problem, without losing data.
+
+## Speed (Region/AZ Context)
+
+Putting data and resources physically closer to customers reduces the distance data has to travel, making access faster.
+
+## Dynamic Content
+
+Content that changes per request, like real-time dashboards or personalized recommendations - CloudFront can deliver this too, not just static cached files.
