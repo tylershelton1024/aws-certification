@@ -1,7 +1,7 @@
 ---
 title: "Hands-On 01: CCP App"
 tags: [hands_on, ec2, vpc, flask, ccp_app]
-updated: 2026-08-09
+updated: 2026-08-10
 ---
 
 # Hands-On 01: CCP App
@@ -10,9 +10,12 @@ A small dynamic Flask app deployed on an EC2 instance inside a custom VPC. Ties 
 
 ## What it does
 
-- `/` - shows the current server time (proves the page is server-rendered, not static), EC2 instance metadata (instance ID, availability zone, instance type) pulled from AWS's instance metadata service, and an in-memory visit counter. No database yet - deliberately deferred to a future project tied to a storage/database chapter.
-- `/flashcards` - a chapter/channel-selector flashcard viewer, discovering every topic under `resources/books/*/topics/*/` and `resources/youtube_channels/*/topics/*/` automatically (`list_topic_folders()`), reading each one's `flashcards_data.js` directly - no duplicated card data, same file the static HTML viewers use.
+- `/` - three feature cards (Flashcards, Notes, Practice). Previously showed EC2 instance metadata and a visit counter as a "this is really server-rendered" demo; removed once the app had real content to show instead.
+- `/flashcards` - a topic-selector flashcard viewer, discovering every topic under `resources/books/*/topics/*/` and `resources/youtube_channels/*/topics/*/` automatically (`list_topic_folders()`), reading each one's `flashcards_data.js` directly - no duplicated card data, same file the static HTML viewers use. Core / Deeper Dive / Both toggle; card order shuffles fresh each time you pick a topic or switch decks.
 - `/notes` - the same topic discovery, rendering each topic's `notes.md`/`deeper_dive_notes.md` as real HTML via the `markdown` package, with a Core/Deeper Dive toggle.
+- `/practice` (Phase 2) - an interactive practice quiz built from each topic's `practice_questions.md`/`deeper_dive_questions.md` (`load_topic_questions()` parses the Markdown directly - no separate question data file). Single Chapter or Cumulative (pick any combination of chapters via checkboxes) scope; Core / Deeper Dive / Both deck; Immediate (instant feedback per question) or Exam (answer everything, then submit and review) mode. Question order and each question's answer-option order shuffle fresh on every attempt. No progress is saved anywhere - that's Phase 3, not built yet. Includes a "Print / Save PDF" button (browser print, for reading/cross-checking by eye) and a separate "Export CSV" button (structured data, meant for handing to another AI model to check the question/answer content) - both scoped to whatever's currently selected on screen.
+
+`static/shared.js` holds the `shuffleArray()`/`combineDecks()` helpers shared by the Flashcards and Practice scripts, loaded once via `<script src="/static/shared.js">` in the shared page shell - avoids each page redefining the same logic.
 
 ## Infrastructure
 

@@ -133,3 +133,133 @@ class TestLoadTopicNotesHtml:
 
         assert result["core_html"] is not None
         assert result["deeper_html"] is None
+
+
+class TestLoadTopicQuestions:
+    def test_returns_empty_lists_when_files_missing(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        topic_dir.mkdir()
+
+        result = app_module.load_topic_questions(str(topic_dir))
+
+        assert result == {"core": [], "deeper": []}
+
+    def test_returns_empty_core_list_for_tbd_placeholder(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "practice_questions.md", (
+            '---\n'
+            'title: "Chapter 2: AWS Global Infrastructure - Practice Questions"\n'
+            'tags: [chapter_02, global_infrastructure, practice_questions]\n'
+            'updated: 2026-08-09\n'
+            '---\n\n'
+            '# Chapter 2: AWS Global Infrastructure - Practice Questions\n\n'
+            '_TBD_\n'
+        ))
+
+        result = app_module.load_topic_questions(str(topic_dir))
+
+        assert result["core"] == []
+
+    def test_parses_valid_practice_questions_and_matches_by_number(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "practice_questions.md", (
+            '---\ntitle: "X"\n---\n\n'
+            '# X\n\n'
+            '## Core Concepts Questions\n\n'
+            '1. What is elasticity?\n'
+            '   - A) Fixed pricing\n'
+            '   - B) Scale to demand\n'
+            '   - C) Manual hardware ordering\n'
+            '   - D) No internet needed\n\n'
+            '3. What is IaaS?\n'
+            '   - A) Managed platform\n'
+            '   - B) End-user software\n'
+            '   - C) Raw infrastructure you configure\n'
+            '   - D) A database service\n\n'
+            '## Answer Key\n\n'
+            '1. B - Elasticity means scaling to demand.\n'
+            '3. C - IaaS gives raw infrastructure control.\n'
+        ))
+
+        core = app_module.load_topic_questions(str(topic_dir))["core"]
+
+        assert len(core) == 2
+        assert core[0]["number"] == 1
+        assert core[0]["question"] == "What is elasticity?"
+        assert core[0]["options"] == [
+            {"letter": "A", "text": "Fixed pricing"},
+            {"letter": "B", "text": "Scale to demand"},
+            {"letter": "C", "text": "Manual hardware ordering"},
+            {"letter": "D", "text": "No internet needed"},
+        ]
+        assert core[0]["correct"] == "B"
+        assert core[0]["explanation"] == "Elasticity means scaling to demand."
+        assert core[1]["number"] == 3
+        assert core[1]["correct"] == "C"
+
+    def test_deeper_dive_questions_parsed_independently_from_core(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "practice_questions.md", (
+            '---\ntitle: "X"\n---\n\n# X\n\n## Core Concepts Questions\n\n'
+            '1. Core question?\n'
+            '   - A) a\n   - B) b\n   - C) c\n   - D) d\n\n'
+            '## Answer Key\n\n1. A - core explanation\n'
+        ))
+        _write(topic_dir / "deeper_dive_questions.md", (
+            '---\ntitle: "X Deeper"\n---\n\n# X Deeper\n\n## Questions\n\n'
+            '1. Deeper question?\n'
+            '   - A) w\n   - B) x\n   - C) y\n   - D) z\n\n'
+            '## Answer Key\n\n1. D - deeper explanation\n'
+        ))
+
+        result = app_module.load_topic_questions(str(topic_dir))
+
+        assert len(result["core"]) == 1
+        assert result["core"][0]["question"] == "Core question?"
+        assert len(result["deeper"]) == 1
+        assert result["deeper"][0]["question"] == "Deeper question?"
+
+    def test_handles_four_space_indented_options(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "deeper_dive_questions.md", (
+            '---\ntitle: "X"\n---\n\n# X\n\n## Questions\n\n'
+            '11. What does permission denied mean?\n'
+            '    - A) Network failed\n'
+            '    - B) Instance not running\n'
+            '    - C) Key was rejected\n'
+            '    - D) Security group blocked\n\n'
+            '## Answer Key\n\n11. C - The connection worked, the key was rejected.\n'
+        ))
+
+        deeper = app_module.load_topic_questions(str(topic_dir))["deeper"]
+
+        assert len(deeper) == 1
+        assert deeper[0]["number"] == 11
+        assert len(deeper[0]["options"]) == 4
+        assert deeper[0]["options"][2] == {"letter": "C", "text": "Key was rejected"}
+
+    def test_skips_question_with_no_matching_answer_key_entry(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "practice_questions.md", (
+            '---\ntitle: "X"\n---\n\n# X\n\n## Core Concepts Questions\n\n'
+            '1. Orphan question?\n'
+            '   - A) a\n   - B) b\n   - C) c\n   - D) d\n\n'
+            '## Answer Key\n\n'
+        ))
+
+        result = app_module.load_topic_questions(str(topic_dir))
+
+        assert result["core"] == []
+
+    def test_skips_question_with_malformed_option_count(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "practice_questions.md", (
+            '---\ntitle: "X"\n---\n\n# X\n\n## Core Concepts Questions\n\n'
+            '1. Incomplete question?\n'
+            '   - A) a\n   - B) b\n   - C) c\n\n'
+            '## Answer Key\n\n1. A - explanation\n'
+        ))
+
+        result = app_module.load_topic_questions(str(topic_dir))
+
+        assert result["core"] == []

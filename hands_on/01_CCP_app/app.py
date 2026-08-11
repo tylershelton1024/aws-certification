@@ -1,6 +1,4 @@
 from flask import Flask
-import urllib.request
-import datetime
 import os
 import re
 import json
@@ -8,9 +6,6 @@ import glob
 import markdown
 
 app = Flask(__name__)
-visit_count = 0
-
-METADATA_BASE = "http://169.254.169.254/latest"
 
 # This file lives at hands_on/01_CCP_app/app.py - go up 3 levels to reach
 # the repo root, then into resources/.
@@ -84,33 +79,70 @@ def load_topic_notes_html(folder_path):
     return result
 
 
-def get_instance_metadata():
-    try:
-        token_req = urllib.request.Request(
-            METADATA_BASE + "/api/token",
-            method="PUT",
-            headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
-        )
-        token = urllib.request.urlopen(token_req, timeout=2).read().decode()
+QUESTION_RE = re.compile(
+    r"^(\d+)\.\s+(.+?)\n((?:[ \t]*-\s*[A-D]\)\s*.+\n?)+)",
+    re.MULTILINE,
+)
+OPTION_LINE_RE = re.compile(r"([A-D])\)\s*(.+?)\s*$")
+ANSWER_RE = re.compile(r"^(\d+)\.\s+([A-D])\s*-\s*(.+?)\s*$", re.MULTILINE)
 
-        def fetch(path):
-            req = urllib.request.Request(
-                METADATA_BASE + path,
-                headers={"X-aws-ec2-metadata-token": token},
-            )
-            return urllib.request.urlopen(req, timeout=2).read().decode()
 
-        return {
-            "instance_id": fetch("/meta-data/instance-id"),
-            "availability_zone": fetch("/meta-data/placement/availability-zone"),
-            "instance_type": fetch("/meta-data/instance-type"),
-        }
-    except Exception:
-        return {
-            "instance_id": "unavailable (not running on EC2?)",
-            "availability_zone": "unavailable",
-            "instance_type": "unavailable",
-        }
+def _parse_questions_section(content):
+    """Parses one questions .md file's body (frontmatter already stripped)
+    into a list of question dicts, matching each question to its Answer Key
+    entry by number - not by position - so a gap or reorder can't misalign
+    them. Anything malformed (no matching answer, wrong option count) is
+    skipped rather than raised, since topics are authored incrementally and
+    a half-written file (or a '_TBD_' placeholder) must not break the app."""
+    questions_part, _, answer_part = content.partition("## Answer Key")
+
+    answers = {}
+    for num_str, letter, explanation in ANSWER_RE.findall(answer_part):
+        answers[int(num_str)] = (letter, explanation.strip())
+
+    questions = []
+    for num_str, stem, options_block in QUESTION_RE.findall(questions_part):
+        num = int(num_str)
+        options = []
+        for line in options_block.splitlines():
+            match = OPTION_LINE_RE.search(line.strip())
+            if match:
+                options.append({"letter": match.group(1), "text": match.group(2)})
+        if num not in answers or len(options) != 4:
+            continue
+        correct, explanation = answers[num]
+        questions.append({
+            "number": num,
+            "question": stem.strip(),
+            "options": options,
+            "correct": correct,
+            "explanation": explanation,
+        })
+
+    questions.sort(key=lambda q: q["number"])
+    return questions
+
+
+def load_topic_questions(folder_path):
+    """Reads practice_questions.md and deeper_dive_questions.md and parses
+    each into a list of question dicts. Always returns {"core": [...],
+    "deeper": [...]} - either list is empty (never None, never raises) if
+    the file is missing or has no complete question+answer pairs yet."""
+    result = {"core": [], "deeper": []}
+
+    core_path = os.path.join(folder_path, "practice_questions.md")
+    if os.path.exists(core_path):
+        with open(core_path, "r", encoding="utf-8") as f:
+            content = FRONTMATTER_RE.sub("", f.read(), count=1)
+        result["core"] = _parse_questions_section(content)
+
+    deeper_path = os.path.join(folder_path, "deeper_dive_questions.md")
+    if os.path.exists(deeper_path):
+        with open(deeper_path, "r", encoding="utf-8") as f:
+            content = FRONTMATTER_RE.sub("", f.read(), count=1)
+        result["deeper"] = _parse_questions_section(content)
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +161,8 @@ BASE_STYLE = """
   --border: #D2D2D7;
   --accent: #0071E3;
   --accent-text: #FFFFFF;
+  --correct: #34C759;
+  --incorrect: #FF3B30;
   --radius: 18px;
   --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
 }
@@ -141,6 +175,8 @@ BASE_STYLE = """
     --border: #38383A;
     --accent: #0A84FF;
     --accent-text: #FFFFFF;
+    --correct: #30D158;
+    --incorrect: #FF453A;
     --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
   }
 }
@@ -214,18 +250,6 @@ a { color: var(--accent); }
 .card-link .desc { font-size: 0.9rem; color: var(--muted); margin-top: 2px; }
 .card-link .chevron { margin-left: auto; color: var(--border); flex: none; }
 
-.status-card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 6px 20px;
-  margin-top: 20px;
-}
-.status-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-.status-row:last-child { border-bottom: none; }
-.status-row .k { color: var(--muted); }
-.status-row .v { font-weight: 600; text-align: right; }
-
 /* Pills - big tappable topic picker instead of a tiny dropdown */
 .pill-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 20px; -webkit-overflow-scrolling: touch; }
 .pill {
@@ -272,11 +296,61 @@ a { color: var(--accent); }
 .notes-content h3 { font-size: 1rem; }
 .notes-content p, .notes-content li { font-size: 0.98rem; line-height: 1.6; }
 .notes-content code { background: var(--border); padding: 2px 6px; border-radius: 5px; font-size: 0.85em; }
+
+/* Practice quiz */
+.checklist-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 16px; margin-bottom: 8px;
+  cursor: pointer; min-height: 44px; font-size: 0.95rem; font-weight: 600;
+}
+.checklist-row.checked { border-color: var(--accent); }
+.checklist-row .box {
+  width: 22px; height: 22px; border-radius: 6px; flex: none;
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+}
+.checklist-row.checked .box { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.score-line { font-size: 0.9rem; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+.question-stem { font-size: 1.05rem; font-weight: 600; line-height: 1.4; margin-bottom: 16px; }
+
+.option-btn {
+  display: block; width: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+  font-size: 0.98rem; color: var(--text); cursor: pointer; min-height: 44px;
+}
+.option-btn .letter { font-weight: 700; margin-right: 8px; color: var(--muted); }
+.option-btn.selected { border-color: var(--accent); border-width: 2px; }
+.option-btn.correct { background: rgba(52,199,89,0.15); border-color: var(--correct); }
+.option-btn.incorrect { background: rgba(255,59,48,0.15); border-color: var(--incorrect); }
+
+.explanation-box {
+  background: var(--surface); border-radius: 12px; padding: 14px 16px;
+  margin-bottom: 16px; font-size: 0.92rem; color: var(--muted); line-height: 1.5;
+}
+.explanation-box .source-label { display: block; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+
+.score-summary { text-align: center; padding: 4px 0 24px; }
+.score-summary .big-score { font-size: 2.5rem; font-weight: 700; }
+
+/* Print / export view - hidden on screen, shown only when printing */
+.print-only { display: none; }
+.print-question { margin-bottom: 14px; page-break-inside: avoid; }
+.print-question .opt { margin-left: 16px; }
+@media print {
+  .navbar, .segment, .pill-row, #chapterChecklist, .big-nav-controls,
+  #submitBtn, #retakeBtn, #printBtn, #csvBtn, #quizArea, .back-link, .subtitle { display: none !important; }
+  .print-only { display: block !important; }
+  body { background: #fff; color: #000; }
+  main { max-width: 100%; padding: 0; }
+}
 """
 
 ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>'
 ICON_CARDS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="14" height="10" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/></svg>'
 ICON_NOTES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>'
+ICON_PRACTICE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><polyline points="9 13 11 15 15 11"/></svg>'
 ICON_CHEVRON_LEFT_SMALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>'
 ICON_CHEVRON_RIGHT_SMALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"/></svg>'
 ICON_CHEVRON_LEFT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>'
@@ -293,6 +367,7 @@ def render_nav(active):
         + item("/", ICON_HOME, "Home", "home")
         + item("/flashcards", ICON_CARDS, "Flashcards", "flashcards")
         + item("/notes", ICON_NOTES, "Notes", "notes")
+        + item("/practice", ICON_PRACTICE, "Practice", "practice")
         + "</nav>"
     )
 
@@ -314,6 +389,7 @@ def render_page(title, active, body_html, extra_script=""):
 {body_html}
 </main>
 {render_nav(active)}
+<script src="/static/shared.js"></script>
 <script>{extra_script}</script>
 </body>
 </html>"""
@@ -321,11 +397,6 @@ def render_page(title, active, body_html, extra_script=""):
 
 @app.route("/")
 def index():
-    global visit_count
-    visit_count += 1
-    metadata = get_instance_metadata()
-    now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-
     body = f"""
 <h1>CCP Study</h1>
 <p class="subtitle">Your AWS Cloud Practitioner companion.</p>
@@ -348,13 +419,14 @@ def index():
     <span class="chevron">{ICON_CHEVRON_RIGHT_SMALL}</span>
 </a>
 
-<div class="status-card">
-    <div class="status-row"><span class="k">Server time</span><span class="v">{now}</span></div>
-    <div class="status-row"><span class="k">Instance ID</span><span class="v">{metadata['instance_id']}</span></div>
-    <div class="status-row"><span class="k">Availability zone</span><span class="v">{metadata['availability_zone']}</span></div>
-    <div class="status-row"><span class="k">Instance type</span><span class="v">{metadata['instance_type']}</span></div>
-    <div class="status-row"><span class="k">Visits since restart</span><span class="v">{visit_count}</span></div>
-</div>
+<a class="card-link" href="/practice">
+    <span class="icon-wrap">{ICON_PRACTICE}</span>
+    <span>
+        <div class="label">Practice</div>
+        <div class="desc">Test yourself and see your score</div>
+    </span>
+    <span class="chevron">{ICON_CHEVRON_RIGHT_SMALL}</span>
+</a>
 """
     return render_page("Home", "home", body)
 
@@ -365,11 +437,23 @@ let currentTopic = Object.keys(topics)[0];
 let currentDeck = "core";
 let index = 0;
 let flipped = false;
+let activeCards = [];
 
 const pillRow = document.getElementById("pillRow");
 const cardEl = document.getElementById("card");
 const counterEl = document.getElementById("counter");
 const segButtons = document.querySelectorAll(".segment button");
+
+function buildActiveCards() {
+    const topic = topics[currentTopic];
+    activeCards = topic ? shuffleArray(combineDecks(topic, currentDeck)) : [];
+}
+
+function resetProgress() {
+    index = 0;
+    flipped = false;
+    buildActiveCards();
+}
 
 function renderPills() {
     pillRow.innerHTML = "";
@@ -379,7 +463,7 @@ function renderPills() {
         btn.textContent = topics[key].label;
         btn.addEventListener("click", () => {
             currentTopic = key;
-            index = 0; flipped = false;
+            resetProgress();
             renderPills(); render();
         });
         pillRow.appendChild(btn);
@@ -387,7 +471,7 @@ function renderPills() {
 }
 
 function currentCards() {
-    return topics[currentTopic][currentDeck];
+    return activeCards;
 }
 
 function render() {
@@ -419,12 +503,13 @@ segButtons.forEach(btn => {
         segButtons.forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         currentDeck = btn.dataset.deck;
-        index = 0; flipped = false;
+        resetProgress();
         render();
     });
 });
 
 renderPills();
+resetProgress();
 render();
 """
 
@@ -453,6 +538,7 @@ def flashcards_page():
 <div class="segment">
     <button class="active" data-deck="core">Core</button>
     <button data-deck="deeper">Deeper Dive</button>
+    <button data-deck="both">Both</button>
 </div>
 
 <div class="flip-card" id="card"></div>
@@ -537,6 +623,396 @@ def notes_page():
 <div class="notes-content" id="notesBody"></div>
 """
     return render_page("Notes", "notes", body, extra_script=script)
+
+
+PRACTICE_SCRIPT = """
+const topics = __TOPICS_JSON__;
+const topicKeys = Object.keys(topics);
+let currentScope = "single";
+let currentTopic = topicKeys[0];
+let checkedTopics = new Set(topicKeys);
+let currentDeck = "core";
+let currentMode = "immediate";
+let index = 0;
+let answers = {};
+let examSubmitted = false;
+
+const pillRow = document.getElementById("pillRow");
+const chapterChecklist = document.getElementById("chapterChecklist");
+const quizArea = document.getElementById("quizArea");
+const counterEl = document.getElementById("counter");
+const navControls = document.getElementById("navControls");
+const submitBtn = document.getElementById("submitBtn");
+const retakeBtn = document.getElementById("retakeBtn");
+const printBtn = document.getElementById("printBtn");
+const csvBtn = document.getElementById("csvBtn");
+const printView = document.getElementById("printView");
+const scopeButtons = document.querySelectorAll("#scopeSegment button");
+const deckButtons = document.querySelectorAll("#deckSegment button");
+const modeButtons = document.querySelectorAll("#modeSegment button");
+
+let activeQuestions = [];
+
+function computeQuestions() {
+    if (currentScope === "single") {
+        const topic = topics[currentTopic];
+        return topic ? combineDecks(topic, currentDeck) : [];
+    }
+    let combined = [];
+    topicKeys.forEach(key => {
+        if (checkedTopics.has(key)) {
+            combineDecks(topics[key], currentDeck).forEach(q => {
+                combined.push(Object.assign({}, q, { sourceLabel: topics[key].label }));
+            });
+        }
+    });
+    return combined;
+}
+
+function buildActiveQuestions() {
+    const shuffled = shuffleArray(computeQuestions()).map(q =>
+        Object.assign({}, q, { options: shuffleArray(q.options) })
+    );
+    activeQuestions = shuffled;
+}
+
+function resetProgress() {
+    index = 0;
+    answers = {};
+    examSubmitted = false;
+    buildActiveQuestions();
+}
+
+function renderPills() {
+    pillRow.innerHTML = "";
+    topicKeys.forEach(key => {
+        const btn = document.createElement("button");
+        btn.className = "pill" + (key === currentTopic ? " active" : "");
+        btn.textContent = topics[key].label;
+        btn.addEventListener("click", () => {
+            currentTopic = key;
+            resetProgress();
+            renderPills();
+            render();
+        });
+        pillRow.appendChild(btn);
+    });
+}
+
+function renderChecklist() {
+    chapterChecklist.innerHTML = "";
+    topicKeys.forEach(key => {
+        const row = document.createElement("div");
+        const isChecked = checkedTopics.has(key);
+        row.className = "checklist-row" + (isChecked ? " checked" : "");
+        row.innerHTML = `<span class="box"></span><span>${topics[key].label}</span>`;
+        row.addEventListener("click", () => {
+            if (checkedTopics.has(key)) {
+                checkedTopics.delete(key);
+            } else {
+                checkedTopics.add(key);
+            }
+            resetProgress();
+            renderChecklist();
+            render();
+        });
+        chapterChecklist.appendChild(row);
+    });
+}
+
+function currentQuestions() {
+    return activeQuestions;
+}
+
+function optionBtnHtml(opt, state) {
+    return `<button class="option-btn ${state}" data-letter="${opt.letter}">
+        <span class="letter">${opt.letter}</span>${opt.text}</button>`;
+}
+
+function renderPrintView(questions) {
+    if (!questions || questions.length === 0) {
+        printView.innerHTML = "";
+        return;
+    }
+    const itemsHtml = questions.map((q, i) => {
+        const optsHtml = q.options.map(opt =>
+            `<div class="opt">${opt.letter}) ${opt.text}</div>`
+        ).join("");
+        const sourceText = q.sourceLabel ? ` (${q.sourceLabel})` : "";
+        return `<div class="print-question">
+            <div><strong>${i + 1}. ${q.question}</strong>${sourceText}</div>
+            ${optsHtml}
+        </div>`;
+    }).join("");
+    const keyHtml = questions.map((q, i) =>
+        `<div>${i + 1}. ${q.correct} - ${q.explanation}</div>`
+    ).join("");
+
+    printView.innerHTML = `
+        <h1>Practice Questions</h1>
+        ${itemsHtml}
+        <h2>Answer Key</h2>
+        ${keyHtml}
+    `;
+}
+
+function csvEscape(value) {
+    const s = String(value);
+    if (/[",\\r\\n]/.test(s)) {
+        return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+}
+
+function questionsToCsv(questions) {
+    const header = ["number", "source_chapter", "question", "option_a", "option_b", "option_c", "option_d", "correct_answer", "explanation"];
+    const rows = questions.map(q => {
+        const byLetter = {};
+        q.options.forEach(opt => { byLetter[opt.letter] = opt.text; });
+        return [
+            q.number,
+            q.sourceLabel || "",
+            q.question,
+            byLetter.A || "",
+            byLetter.B || "",
+            byLetter.C || "",
+            byLetter.D || "",
+            q.correct,
+            q.explanation,
+        ];
+    });
+    return [header, ...rows].map(row => row.map(csvEscape).join(",")).join("\\r\\n");
+}
+
+function downloadCsv() {
+    const questions = currentQuestions();
+    if (!questions || questions.length === 0) { return; }
+    const csv = questionsToCsv(questions);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "practice_questions.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function render() {
+    const questions = currentQuestions();
+    renderPrintView(questions);
+    navControls.style.display = "flex";
+    submitBtn.style.display = "none";
+    retakeBtn.style.display = "none";
+
+    if (!questions || questions.length === 0) {
+        navControls.style.display = "none";
+        quizArea.innerHTML = '<p class="flip-hint">No questions yet for this selection.</p>';
+        return;
+    }
+    if (currentMode === "exam" && examSubmitted) {
+        navControls.style.display = "none";
+        renderReview(questions);
+        return;
+    }
+    counterEl.textContent = (index + 1) + " / " + questions.length;
+    if (currentMode === "exam") {
+        renderExamQuestion(questions);
+    } else {
+        renderImmediateQuestion(questions);
+    }
+}
+
+function renderImmediateQuestion(questions) {
+    const q = questions[index];
+    const picked = answers[index];
+    const optsHtml = q.options.map(opt => {
+        let state = "";
+        if (picked) {
+            if (opt.letter === q.correct) { state = "correct"; }
+            else if (opt.letter === picked) { state = "incorrect"; }
+        }
+        return optionBtnHtml(opt, state);
+    }).join("");
+    const answeredIdx = Object.keys(answers).map(Number);
+    const correctCount = answeredIdx.filter(i => answers[i] === questions[i].correct).length;
+    const explanationHtml = picked
+        ? `<div class="explanation-box"><strong>${picked === q.correct ? "Correct." : "Not quite."}</strong> ${q.explanation}</div>`
+        : "";
+    const sourceHtml = q.sourceLabel ? `<p class="score-line">${q.sourceLabel}</p>` : "";
+
+    quizArea.innerHTML = `
+        <p class="score-line">Score: ${correctCount} / ${answeredIdx.length}</p>
+        ${sourceHtml}
+        <div class="question-stem">${q.question}</div>
+        ${optsHtml}
+        ${explanationHtml}
+    `;
+    if (!picked) {
+        quizArea.querySelectorAll(".option-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                answers[index] = btn.dataset.letter;
+                render();
+            });
+        });
+    }
+}
+
+function renderExamQuestion(questions) {
+    const q = questions[index];
+    const picked = answers[index];
+    const optsHtml = q.options.map(opt =>
+        optionBtnHtml(opt, opt.letter === picked ? "selected" : "")
+    ).join("");
+    const answeredCount = Object.keys(answers).length;
+    const sourceHtml = q.sourceLabel ? `<p class="score-line">${q.sourceLabel}</p>` : "";
+
+    quizArea.innerHTML = `
+        <p class="score-line">Answered: ${answeredCount} / ${questions.length}</p>
+        ${sourceHtml}
+        <div class="question-stem">${q.question}</div>
+        ${optsHtml}
+    `;
+    quizArea.querySelectorAll(".option-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            answers[index] = btn.dataset.letter;
+            render();
+        });
+    });
+    submitBtn.style.display = "block";
+}
+
+function renderReview(questions) {
+    const correctCount = questions.filter((q, i) => answers[i] === q.correct).length;
+    const itemsHtml = questions.map((q, i) => {
+        const picked = answers[i];
+        const optsHtml = q.options.map(opt => {
+            let state = "";
+            if (opt.letter === q.correct) { state = "correct"; }
+            else if (opt.letter === picked) { state = "incorrect"; }
+            return optionBtnHtml(opt, state);
+        }).join("");
+        const sourceHtml = q.sourceLabel
+            ? `<div class="explanation-box"><span class="source-label">${q.sourceLabel}</span>${q.explanation}</div>`
+            : `<div class="explanation-box">${q.explanation}</div>`;
+        return `<div class="question-stem">${i + 1}. ${q.question}</div>${optsHtml}${sourceHtml}`;
+    }).join("");
+
+    quizArea.innerHTML = `
+        <div class="score-summary">
+            <div class="big-score">${correctCount} / ${questions.length}</div>
+            <p class="subtitle">correct</p>
+        </div>
+        ${itemsHtml}
+    `;
+    retakeBtn.style.display = "block";
+}
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+    const n = currentQuestions().length;
+    if (n) { index = (index - 1 + n) % n; render(); }
+});
+document.getElementById("nextBtn").addEventListener("click", () => {
+    const n = currentQuestions().length;
+    if (n) { index = (index + 1) % n; render(); }
+});
+submitBtn.addEventListener("click", () => { examSubmitted = true; render(); });
+retakeBtn.addEventListener("click", () => { resetProgress(); render(); });
+printBtn.addEventListener("click", () => { window.print(); });
+csvBtn.addEventListener("click", () => { downloadCsv(); });
+
+scopeButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        scopeButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentScope = btn.dataset.scope;
+        pillRow.style.display = currentScope === "single" ? "flex" : "none";
+        chapterChecklist.style.display = currentScope === "cumulative" ? "block" : "none";
+        resetProgress();
+        render();
+    });
+});
+deckButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        deckButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentDeck = btn.dataset.deck;
+        resetProgress();
+        render();
+    });
+});
+modeButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        modeButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentMode = btn.dataset.mode;
+        resetProgress();
+        render();
+    });
+});
+
+renderPills();
+renderChecklist();
+resetProgress();
+render();
+"""
+
+
+@app.route("/practice")
+def practice_page():
+    topics = {}
+    for folder_name, folder_path in list_topic_folders():
+        decks = load_topic_questions(folder_path)
+        if not decks["core"] and not decks["deeper"]:
+            continue
+        topics[folder_name] = {
+            "label": get_topic_label(folder_path),
+            "core": decks["core"],
+            "deeper": decks["deeper"],
+        }
+    script = PRACTICE_SCRIPT.replace("__TOPICS_JSON__", json.dumps(topics))
+
+    body = f"""
+<a class="back-link" href="/">{ICON_CHEVRON_LEFT_SMALL} Home</a>
+<h1>Practice</h1>
+<p class="subtitle">Test yourself with practice questions.</p>
+
+<div class="segment" id="scopeSegment">
+    <button class="active" data-scope="single">Single Chapter</button>
+    <button data-scope="cumulative">Cumulative</button>
+</div>
+
+<div class="pill-row" id="pillRow"></div>
+<div id="chapterChecklist" style="display:none;margin-bottom:20px;"></div>
+
+<div class="segment" id="deckSegment">
+    <button class="active" data-deck="core">Core</button>
+    <button data-deck="deeper">Deeper Dive</button>
+    <button data-deck="both">Both</button>
+</div>
+
+<div class="segment" id="modeSegment">
+    <button class="active" data-mode="immediate">Immediate</button>
+    <button data-mode="exam">Exam</button>
+</div>
+
+<div id="quizArea"></div>
+
+<div class="big-nav-controls" id="navControls">
+    <button class="round-btn" id="prevBtn">{ICON_CHEVRON_LEFT}</button>
+    <span class="counter-pill" id="counter"></span>
+    <button class="round-btn" id="nextBtn">{ICON_CHEVRON_RIGHT}</button>
+</div>
+
+<button class="pill" id="submitBtn" style="display:none;width:100%;margin-top:16px;">Submit Quiz</button>
+<button class="pill" id="retakeBtn" style="display:none;width:100%;margin-top:16px;">Retake Quiz</button>
+<button class="pill" id="printBtn" style="width:100%;margin-top:16px;">Print / Save PDF</button>
+<button class="pill" id="csvBtn" style="width:100%;margin-top:10px;">Export CSV (for AI review)</button>
+
+<div class="print-only" id="printView"></div>
+"""
+    return render_page("Practice", "practice", body, extra_script=script)
 
 
 if __name__ == "__main__":
