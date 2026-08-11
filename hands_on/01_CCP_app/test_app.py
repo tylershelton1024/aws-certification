@@ -263,3 +263,37 @@ class TestLoadTopicQuestions:
         result = app_module.load_topic_questions(str(topic_dir))
 
         assert result["core"] == []
+
+    def test_question_tagged_with_its_h3_section_heading(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "practice_questions.md", (
+            '---\ntitle: "X"\n---\n\n# X\n\n## Core Concepts Questions\n\n'
+            '### Regions and Availability Zones\n\n'
+            '1. What is a Region?\n'
+            '   - A) a\n   - B) b\n   - C) c\n   - D) d\n\n'
+            '2. What is an AZ?\n'
+            '   - A) a\n   - B) b\n   - C) c\n   - D) d\n\n'
+            '### Edge Locations\n\n'
+            '3. What is an edge location?\n'
+            '   - A) a\n   - B) b\n   - C) c\n   - D) d\n\n'
+            '## Answer Key\n\n1. A - x\n2. B - y\n3. C - z\n'
+        ))
+
+        core = app_module.load_topic_questions(str(topic_dir))["core"]
+
+        assert core[0]["section"] == "Regions and Availability Zones"
+        assert core[1]["section"] == "Regions and Availability Zones"
+        assert core[2]["section"] == "Edge Locations"
+
+    def test_question_section_is_none_when_no_h3_headings_present(self, tmp_path):
+        topic_dir = tmp_path / "01_intro"
+        _write(topic_dir / "practice_questions.md", (
+            '---\ntitle: "X"\n---\n\n# X\n\n## Core Concepts Questions\n\n'
+            '1. Plain question, no section heading?\n'
+            '   - A) a\n   - B) b\n   - C) c\n   - D) d\n\n'
+            '## Answer Key\n\n1. A - x\n'
+        ))
+
+        core = app_module.load_topic_questions(str(topic_dir))["core"]
+
+        assert core[0]["section"] is None

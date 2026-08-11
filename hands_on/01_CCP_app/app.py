@@ -85,6 +85,31 @@ QUESTION_RE = re.compile(
 )
 OPTION_LINE_RE = re.compile(r"([A-D])\)\s*(.+?)\s*$")
 ANSWER_RE = re.compile(r"^(\d+)\.\s+([A-D])\s*-\s*(.+?)\s*$", re.MULTILINE)
+SECTION_HEADING_RE = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
+
+
+def _split_by_section_heading(questions_part):
+    """Splits a questions block into (section_name, chunk) pairs on '### '
+    headings, so each question can be tagged with which notes.md/
+    deeper_dive_notes.md section it belongs to. Text before the first
+    heading (or the whole block, if there are no headings at all) is
+    tagged with section_name=None - older files with no '###' grouping
+    yet still parse fine, just without a section mapping."""
+    headings = list(SECTION_HEADING_RE.finditer(questions_part))
+    if not headings:
+        return [(None, questions_part)]
+
+    chunks = []
+    if headings[0].start() > 0:
+        preamble = questions_part[:headings[0].start()]
+        if preamble.strip():
+            chunks.append((None, preamble))
+    for i, heading in enumerate(headings):
+        section_name = heading.group(1).strip()
+        start = heading.end()
+        end = headings[i + 1].start() if i + 1 < len(headings) else len(questions_part)
+        chunks.append((section_name, questions_part[start:end]))
+    return chunks
 
 
 def _parse_questions_section(content):
@@ -101,23 +126,25 @@ def _parse_questions_section(content):
         answers[int(num_str)] = (letter, explanation.strip())
 
     questions = []
-    for num_str, stem, options_block in QUESTION_RE.findall(questions_part):
-        num = int(num_str)
-        options = []
-        for line in options_block.splitlines():
-            match = OPTION_LINE_RE.search(line.strip())
-            if match:
-                options.append({"letter": match.group(1), "text": match.group(2)})
-        if num not in answers or len(options) != 4:
-            continue
-        correct, explanation = answers[num]
-        questions.append({
-            "number": num,
-            "question": stem.strip(),
-            "options": options,
-            "correct": correct,
-            "explanation": explanation,
-        })
+    for section_name, chunk in _split_by_section_heading(questions_part):
+        for num_str, stem, options_block in QUESTION_RE.findall(chunk):
+            num = int(num_str)
+            options = []
+            for line in options_block.splitlines():
+                match = OPTION_LINE_RE.search(line.strip())
+                if match:
+                    options.append({"letter": match.group(1), "text": match.group(2)})
+            if num not in answers or len(options) != 4:
+                continue
+            correct, explanation = answers[num]
+            questions.append({
+                "number": num,
+                "question": stem.strip(),
+                "options": options,
+                "correct": correct,
+                "explanation": explanation,
+                "section": section_name,
+            })
 
     questions.sort(key=lambda q: q["number"])
     return questions
