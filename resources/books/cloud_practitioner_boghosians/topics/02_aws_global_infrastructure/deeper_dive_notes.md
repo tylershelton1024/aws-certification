@@ -75,3 +75,25 @@ Cached content at an edge location does not stay there forever. Two ways stale c
 
 - **TTL (Time To Live) expiration** - each cached object has a TTL. Once it expires, the next request for that object causes a fresh fetch from the origin automatically, with no action needed from anyone.
 - **Invalidation** - an explicit CloudFront feature that lets you manually force a specific cached path to be dropped everywhere immediately, rather than waiting for the TTL to expire naturally. Useful when you can't wait - e.g. a broken image was just fixed and shouldn't keep serving the old cached version for the rest of its TTL.
+
+## CDN Security Features: Geoblocking, SSL, and DDoS Protection
+
+CloudFront provides three distinct security features beyond its core caching job:
+
+- **Geoblocking** - allows or blocks requests based on which country they appear to come from, using the requester's IP geolocation. Common use case: enforcing content-licensing restrictions, which is why some streaming shows are only available in certain countries.
+- Real limitation: geoblocking only checks the *apparent* source IP, not a person's true physical location. A VPN or proxy routes traffic through a server in a different country, making the request genuinely appear to originate there - CloudFront has no way to see through that. This is the same mechanism people use to access another country's Netflix library.
+- SSL encryption is actually two separate hops, not one continuous tunnel: CloudFront decrypts the viewer's request at the edge location, and - only on a cache miss - opens a *separate* encrypted connection to the origin. Encrypting the viewer-to-edge leg does not automatically encrypt the edge-to-origin leg; each hop needs its own encryption.
+- The viewer-to-edge leg matters most for protecting the user specifically, since it happens on every single request (cache hit or miss) and travels over whatever network the viewer is actually on (public WiFi, their ISP) - the most exposed stretch of the journey.
+- Edge-to-origin encryption is itself a Shared Responsibility Model matter: AWS provides the capability (CloudFront's origin protocol policy can require HTTPS), but the customer must configure it correctly - setting the policy to require HTTPS, and installing a valid SSL certificate on their own origin server. Left misconfigured, that leg can stay unencrypted even though AWS offered the tool to prevent it. Same "AWS provides the tool, customer configures it correctly" pattern already seen with multi-AZ redundancy and load balancing.
+- **AWS Shield** (Standard tier) is automatically included at no extra cost with CloudFront, providing DDoS protection. CloudFront's edge network spans hundreds of locations globally, so a flood of malicious traffic gets absorbed and spread across that whole network rather than overwhelming one single origin server - Shield adds further automatic protection on top of that natural spread.
+
+## EC2 Overview (Compute Services Preview)
+
+Note on scope: this is more properly Compute Services material (a later chapter), not core Global Infrastructure content - filed here because Tyler flagged EC2 as a topic he wanted a real deeper dive on while working through this chapter.
+
+- **AMI (Amazon Machine Image)** - the template an instance boots from: an OS plus whatever software is pre-installed on it. AWS provides standard AMIs (like the Amazon Linux 2023 image `CCP_app` uses); you can also build and save your own customized one.
+- **Instance type** - defines an instance's hardware: CPU, memory, and network performance. Named like `t3.micro` - the family letter signals what it's optimized for (general purpose, compute-optimized, memory-optimized, etc.), the number is the generation, and the size scales the resources up.
+- **EBS (Elastic Block Store)** - the virtual hard drive attached to an instance. Persists independently of the instance's own lifecycle - an EBS volume (and its data) can outlive the instance it was attached to, unlike temporary "instance store" storage, which is deleted when the instance stops or terminates.
+- **On-Demand** - the pricing model of paying per hour/second, with no commitment. What `CCP_app` uses.
+- **Reserved Instances** - committing to 1-3 years of usage for a steep discount, appropriate when you know something will run long-term.
+- **Spot Instances** - bidding on AWS's unused spare compute capacity for very cheap, but AWS can reclaim that capacity with little notice - good for interruptible workloads only, bad for anything that must stay up continuously.

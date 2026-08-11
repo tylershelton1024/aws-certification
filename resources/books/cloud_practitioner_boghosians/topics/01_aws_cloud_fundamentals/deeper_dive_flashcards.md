@@ -80,17 +80,33 @@ If a request is allowed in by a security group, the matching response is automat
 
 A stateless firewall does not remember past traffic, so it cannot tell that a piece of outbound traffic is "the response to" an inbound request it already allowed. It needs a separate, explicit rule for each direction. Different from Security Groups, which are stateful.
 
+## Stateful vs. Stateless (Security Groups vs. Network ACLs)
+
+The core difference: a stateful firewall (security group) remembers a request it already allowed in, so it automatically permits the matching response back out - one rule covers both directions. A stateless firewall (Network ACL) has no memory of past traffic, so inbound and outbound each need their own explicit rule, even for what's really the same exchange.
+
 ## Public vs. Private IP
 
 The private IP is what a device uses inside its own network (e.g. `192.168.1.5` at home, or an EC2 instance's internal IP). The public IP is the address visible to the outside internet - a router or internet gateway translates between the two.
+
+## HTTP
+
+HyperText Transfer Protocol - the standard protocol web browsers and servers use to exchange requests and responses. Defaults to port 80. Not encrypted on its own - see HTTPS.
 
 ## HTTPS
 
 HTTP wrapped in encryption (TLS/SSL) - same messages, unreadable in transit. Uses a different default port (443) than HTTP (80), which matters operationally: opening one port does not open the other.
 
+## HTTP vs. HTTPS (Port Difference)
+
+Not two layered protocols in a stack - the same messages, either plain (HTTP, port 80) or encrypted (HTTPS, port 443). The operational trap: they use different default ports, so a security group or firewall rule opening one does not open the other. This caused a real bug in this project - a browser auto-upgraded a bare IP request to HTTPS, hitting port 443 with no rule allowing it through, even though port 80 was correctly open.
+
+## SSH
+
+Secure Shell - a protocol for securely logging into a remote server's command line over a network. What actually lets you type commands directly on an EC2 instance from your own computer.
+
 ## SSH Key Pair
 
-A public/private key pair used to log into a server instead of a password. AWS keeps the public half; you download and keep the private half (a `.pem` file). Whoever holds that file can log in - never commit it to a repo.
+A public/private key pair used to log into a server via SSH instead of a password. AWS keeps the public half; you download and keep the private half (a `.pem` file). Whoever holds that file can log in - never commit it to a repo.
 
 ## "Permission Denied" (SSH)
 

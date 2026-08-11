@@ -190,6 +190,106 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
     - C) Invalidations are required before any content can be cached at all
     - D) Only when switching to a different AWS Region
 
+### CDN Security Features: Geoblocking, SSL, and DDoS Protection
+
+28. When CloudFront serves a cached response for a viewer's HTTPS request, how many separate encrypted connections are actually involved?
+    - A) Two separate encrypted hops - viewer-to-edge, and (only on a cache miss) edge-to-origin
+    - B) Just one continuous encrypted tunnel from viewer all the way to the origin
+    - C) None - CloudFront never encrypts anything itself
+    - D) Three: viewer-to-edge, edge-to-edge, and edge-to-origin
+
+29. Why does the viewer-to-edge connection specifically need encryption on every single request, regardless of cache hit or miss?
+    - A) It doesn't - only the edge-to-origin connection matters
+    - B) That connection happens on every request and travels over whatever network the viewer is on, the most exposed stretch of the journey
+    - C) The viewer-to-edge connection is only made once per day
+    - D) Viewer connections are automatically safe regardless of encryption
+
+30. Why does CloudFront's distributed edge network help absorb a DDoS attack?
+    - A) It doesn't - DDoS attacks always succeed regardless of CDN use
+    - B) CloudFront blocks all traffic during any attack, including legitimate users
+    - C) Malicious traffic gets spread across hundreds of edge locations instead of overwhelming one single origin server
+    - D) DDoS protection requires a separate paid product with no free tier
+
+31. What does CloudFront's geoblocking feature actually check to decide whether to allow or block a request?
+    - A) The user's actual physical GPS location
+    - B) The user's passport information
+    - C) The device's operating system
+    - D) The apparent source IP address and what country it's registered to
+
+32. Why can a VPN or proxy circumvent geoblocking?
+    - A) Geoblocking only checks the apparent source IP, and a VPN makes the request genuinely appear to originate from a different country
+    - B) VPNs are specifically whitelisted by AWS
+    - C) Geoblocking does not actually exist as a real CloudFront feature
+    - D) VPNs disable CloudFront entirely
+
+33. Who is responsible for making sure the edge-to-origin connection is actually encrypted?
+    - A) AWS automatically encrypts it with no configuration needed, in all cases
+    - B) The customer must configure CloudFront's origin protocol policy and install a valid certificate on their origin - AWS provides the capability, not automatic enforcement
+    - C) Encryption is never possible on the edge-to-origin leg
+    - D) It is impossible to configure this incorrectly
+
+34. What is AWS Shield?
+    - A) A paid-only firewall product with no free tier
+    - B) A physical security team stationed at AWS data centers
+    - C) A service automatically included at no extra cost with CloudFront, providing DDoS protection
+    - D) A tool for encrypting data at rest in S3
+
+### EC2 Overview (Compute Services Preview)
+
+35. What is the relationship between an AMI and an EC2 instance?
+    - A) An AMI is the template (OS + software) an instance boots from
+    - B) An AMI is a type of EBS volume
+    - C) An AMI is a pricing model for EC2
+    - D) An AMI only exists after an instance is already running
+
+36. What does the family letter in an instance type name (e.g. the "t" in t3.micro) indicate?
+    - A) The AWS Region the instance runs in
+    - B) What the instance type is optimized for (general purpose, compute, memory, etc.)
+    - C) The pricing model being used
+    - D) Whether the instance uses EBS or instance store
+
+37. Which EC2 pricing model would be most appropriate for a workload that must run continuously for 3 years and never be interrupted?
+    - A) Spot Instances
+    - B) On-Demand only
+    - C) Reserved Instances
+    - D) None of the pricing models support long-term workloads
+
+38. What is an AMI (Amazon Machine Image)?
+    - A) A pricing discount for long-term EC2 usage
+    - B) A virtual hard drive attached to an instance
+    - C) A type of Availability Zone
+    - D) The template an instance boots from - an OS plus pre-installed software
+
+39. What does an EC2 instance type actually define?
+    - A) The instance's hardware - CPU, memory, and network performance
+    - B) The Region the instance is deployed in
+    - C) Whether the instance uses HTTP or HTTPS
+    - D) The instance's billing currency
+
+40. What happens to an EBS volume's data when the EC2 instance it's attached to is terminated?
+    - A) It is always immediately and permanently deleted with no exceptions
+    - B) It can persist independently of the instance, unlike temporary instance store storage
+    - C) It automatically transfers to a different customer's account
+    - D) EBS volumes cannot be attached to EC2 instances at all
+
+41. What defines the On-Demand EC2 pricing model?
+    - A) A mandatory 3-year commitment
+    - B) Bidding on unused spare capacity
+    - C) Paying per hour or second, with no commitment
+    - D) A one-time upfront payment covering the instance forever
+
+42. What is the tradeoff with Reserved Instances?
+    - A) They cost more than On-Demand with no benefit
+    - B) They can be reclaimed by AWS with little notice
+    - C) They only work with Spot pricing
+    - D) You commit to 1-3 years of usage in exchange for a steep discount
+
+43. What is the major risk of using Spot Instances?
+    - A) AWS can reclaim that capacity with little notice, since you're bidding on unused spare capacity
+    - B) They are always more expensive than On-Demand
+    - C) They cannot be used for any workload type
+    - D) They require a 5-year minimum commitment
+
 ## Answer Key
 
 1. C - AWS's Availability Zones being redundant doesn't automatically make a specific application redundant - that requires the customer to architect their app to run across multiple AZs (e.g. a load balancer plus instances in more than one AZ). A single-AZ deployment has no automatic failover.
@@ -219,3 +319,19 @@ Source: written by the assistant based on `deeper_dive_notes.md` and our convers
 25. D - Every AZ used is still inside the same Region, and Regions are isolated from each other, so a Region-wide problem affects all of them equally.
 26. A - Once a cached object's TTL expires, the next request for it automatically triggers a fresh fetch from the origin.
 27. B - Use an invalidation when you can't wait for the TTL to expire naturally - e.g. a broken image was just fixed and shouldn't keep serving the old cached version.
+28. A - There are two separate encrypted hops - viewer-to-edge always, and edge-to-origin only on a cache miss - not one continuous tunnel.
+29. B - The viewer-to-edge connection happens on every request and travels over whatever network the viewer is on, making it the most exposed stretch of the journey.
+30. C - Malicious traffic gets spread across hundreds of edge locations instead of overwhelming one single origin server.
+31. D - Geoblocking checks the apparent source IP address and what country it's registered to.
+32. A - Geoblocking only checks the apparent source IP; a VPN makes the request genuinely appear to originate from a different country, which CloudFront cannot see through.
+33. B - The customer must configure CloudFront's origin protocol policy and install a valid certificate on their origin - AWS provides the capability, not automatic enforcement.
+34. C - AWS Shield is automatically included at no extra cost with CloudFront, providing DDoS protection.
+35. A - An AMI is the template - an OS plus pre-installed software - that an instance boots from.
+36. B - The family letter indicates what the instance type is optimized for (general purpose, compute, memory, etc.).
+37. C - Reserved Instances are the right fit for a long-term, continuous, non-interruptible workload.
+38. D - An AMI is the template an instance boots from - an OS plus pre-installed software.
+39. A - An EC2 instance type defines the instance's hardware: CPU, memory, and network performance.
+40. B - An EBS volume can persist independently of the instance's own lifecycle, unlike temporary instance store storage.
+41. C - On-Demand means paying per hour or second, with no commitment.
+42. D - Reserved Instances require committing to 1-3 years of usage in exchange for a steep discount.
+43. A - AWS can reclaim Spot Instance capacity with little notice, since you're bidding on unused spare capacity.

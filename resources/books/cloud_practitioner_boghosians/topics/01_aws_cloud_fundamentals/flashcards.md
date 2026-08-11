@@ -28,6 +28,10 @@ AWS manages the OS, runtime, and middleware; you just provide your application c
 
 The vendor manages everything, including the application itself; you just use it (e.g. Netflix, Gmail, Dropbox).
 
+## Service Models Comparison (IaaS vs. PaaS vs. SaaS)
+
+The pizza analogy, side by side: IaaS is making a pizza from scratch (you control everything, do all the work). PaaS is pizza delivered for you to bake (AWS handles the infrastructure, you just handle your code/application). SaaS is pizza arriving hot and ready (everything, including the application itself, is already handled - you just consume it). Same underlying spectrum of "how much do you manage yourself," three different points on it.
+
 ## Amazon EC2
 
 Elastic Compute Cloud - virtual servers ("instances") you configure from the ground up. The classic IaaS example.
